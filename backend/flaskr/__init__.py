@@ -6,13 +6,11 @@ import random
 
 from models import setup_db, Question, Category
 
-QUESTIONS_PER_PAGE = 10
-ALL_CATEGORY = 0
 
 def paginate_question(request, questions):
-  page = request.args.get('page', 1, int)
-  start = (page - 1) * QUESTIONS_PER_PAGE
-  end = start + QUESTIONS_PER_PAGE
+  page = request.args.get('page', 1, type=int)
+  start = (page - 1) * 10
+  end = start + 10
   page_questions = [question.format() for question in questions[start:end]]
   return page_questions
 
@@ -57,14 +55,13 @@ def create_app(test_config=None):
     questions = Question.query.order_by(Question.difficulty).all()
     page_questions = paginate_question(request, questions)
 
-    if len(page_questions) < 1 :
+    if len(page_questions) < 1:
       abort(404)
     
     return jsonify({
       "questions": page_questions,
       "total_questions": len(questions),
       "categories": categories,
-      "current_category": ALL_CATEGORY
       })
 
   # -----------------------------------------------------------
@@ -139,33 +136,33 @@ def create_app(test_config=None):
   # Quiz play using POST
   # -----------------------------------------------------------
 
-  @app.route('/quizzes', methods=['POST'])
-  def get_quiz_questions():
-
+  @app.route('/quizzes', methods=['GET','POST'])
+  def get_quiz_question():
     try:
-          body = request.get_json()
-          previous_questions = body.get('previous_questions', None)
-          quiz_category = body.get('quiz_category', None)
-          category_id = quiz_category['id']
+      body = request.get_json()
+      prev_qs = body['previous_questions']
+      cid = body['quiz_category']['id']
+      print(prev_qs, cid)
 
-          if category_id == 0:
-              questions = Question.query.filter(
-                  Question.id.notin_(previous_questions)).all()
-          else:
-              questions = Question.query.filter(
-                  Question.id.notin_(previous_questions),
-                  Question.category == category_id).all()
-          question = None
-          if(questions):
-              question = random.choice(questions)
+      if cid == 0:
+        selection = Question.query.filter(Question.id.notin_(prev_qs)).all()
+      else:
+        selection = Question.query.filter(Question.category==cid, Question.id.notin_(prev_qs)).all()
+      
+      current_qs = [q.format() for q in selection]
 
-          return jsonify({
-              'success': True,
-              'question': question.format()
-          })
+      if selection:
+        q = current_qs[random.randint(0, len(selection)-1)]
+      else:
+        q = None
 
-    except Exception:
-        abort(422)
+      return jsonify({
+        'success': True,
+        'question': q,
+        })
+
+    except:
+      abort(422)
 
   @app.errorhandler(400)
   def unprocessable(error):

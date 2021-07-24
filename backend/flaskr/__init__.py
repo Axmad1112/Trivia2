@@ -77,7 +77,8 @@ def create_app(test_config=None):
       return jsonify({
         "success":True
         })
-    except:
+    except Exception as e:
+      print(os.environ[str(e)])
       abort(422)
 
   # -----------------------------------------------------------
@@ -91,7 +92,8 @@ def create_app(test_config=None):
       req_body = request.get_json()
       search = req_body.get('searchTerm', None)
       if search :
-          questions = Question.query.filter(Question.question.ilike(f'%{search}%'))\
+          questions = Question.query.filter(
+            Question.question.ilike(f'%{search}%'))\
             .order_by(Question.difficulty).all()
           page_qestions = paginate_question(request, questions)
           return jsonify({
@@ -110,7 +112,7 @@ def create_app(test_config=None):
           "success":True
           })
     except Exception as e:
-          print(str(e))
+          print(os.environ[str(e)])
           abort(422)
 
 
@@ -120,7 +122,9 @@ def create_app(test_config=None):
 
   @app.route("/categories/<category_id>/questions")
   def get_category_by_id(category_id):
-    questions = Question.query.filter(Question.category == category_id).order_by(Question.difficulty).all()
+    questions = Question.query.filter(
+      Question.category == category_id).order_by(
+        Question.difficulty).all()
     page_questions = paginate_question(request, questions)
 
     if len(page_questions) < 1:
@@ -145,9 +149,12 @@ def create_app(test_config=None):
       print(prev_qs, cid)
 
       if cid == 0:
-        selection = Question.query.filter(Question.id.notin_(prev_qs)).all()
+        selection = Question.query.filter(
+          Question.id.notin_(prev_qs)).all()
       else:
-        selection = Question.query.filter(Question.category==cid, Question.id.notin_(prev_qs)).all()
+        selection = Question.query.filter(
+          Question.category==cid, 
+          Question.id.notin_(prev_qs)).all()
       
       current_qs = [q.format() for q in selection]
 

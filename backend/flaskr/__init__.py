@@ -77,8 +77,7 @@ def create_app(test_config=None):
       return jsonify({
         "success":True
         })
-    except Exception as e:
-      print(os.environ[str(e)])
+    except:
       abort(422)
 
   # -----------------------------------------------------------
